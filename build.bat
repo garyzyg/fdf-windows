@@ -1,3 +1,5 @@
+SET SED=C:\msys64\usr\bin\sed.exe
+
 PUSHD .
 FOR %%I IN (C:\WinDDK\7600.16385.1) DO CALL %%I\bin\setenv.bat %%I fre %Platform% WIN7 no_oacr
 POPD
@@ -9,17 +11,9 @@ git clone --branch 1.23.2 https://github.com/tronkko/dirent.git
 
 ECHO.>unistd.h
 
-FOR %%I IN (
-"struct stat"
-"\Wstat("
-) DO FOR %%J IN (*.c) DO C:\msys64\usr\bin\sed.exe "/%%~I/s@\w*stat@_&@" -i %%J
-
-FOR %%I IN (*.c fdf.h) DO FOR %%J IN (
-"ifndef S_IFLNK		if !S_IFLNK"
-"ifdef S_IFLNK		if S_IFLNK"
-"vsnprintf		_&"
-"define FDF_H		&\n#include <dirent.h>"
-) DO FOR /F "TOKENS=1,* DELIMS=	" %%K IN (%%J) DO C:\msys64\usr\bin\sed.exe "s@%%K@%%L@" -i %%I
+FOR %%I IN (*.c) DO FOR %%J IN (
+"include .sys/stat.h.	&\n#include <config.h>"
+) DO FOR /F "TOKENS=1,* DELIMS=	" %%K IN (%%J) DO %SED% "s@%%K@%%L@" -i %%I
 
 FOR /F %%I IN ('DIR /B *.c') DO CALL :cl %%I
 CALL :cl /DGLOBMATCH_I gmatch.c /Fogmatch_i.obj
@@ -36,5 +30,5 @@ link.exe -nologo						^
 	/LTCG							^
 	/OUT:%1							^
 	*.obj							^
-	user32.lib advapi32.lib					^
-	kernel32.lib						^
+	/NODEFAULTLIB /SUBSYSTEM:CONSOLE			^
+	kernel32.lib msvcrt.lib					^
